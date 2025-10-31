@@ -1,0 +1,25 @@
+{
+  "name": "data-privacy-vault",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vault de Privacidad de Datos (PII) con Node.js y Express",
+  "main": "vault/server.js",
+  "scripts": {
+    "start": "node vault/server.js",
+    "dev": "NODE_ENV=development node vault/server.js"
+  },
+  "keywords": [
+    "privacy",
+    "vault",
+    "pii",
+    "anonymization",
+    "tokenization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8"
+  }
+}
