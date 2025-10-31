@@ -10,8 +10,19 @@ Servicio mínimo para tokenizar (reversible) y anonimizar (irreversible) PII.
 ### Instalación
 ```bash
 npm install
-cp .env.example .env
-# Edita .env con tus claves hex de 32 bytes (64 chars)
+# Opción A: usar archivo .env
+# (si tienes .env.example)
+# cp .env.example .env
+# Edita .env con claves hex de 32 bytes (64 chars)
+
+# Opción B: generar llaves dinámicamente con openssl y exportarlas
+export PORT=4001
+export VAULT_AES_KEY_HEX=$(openssl rand -hex 32)
+export VAULT_TOKEN_HMAC_HEX=$(openssl rand -hex 32)
+
+# Verifica longitud = 64 chars
+# echo -n "$VAULT_AES_KEY_HEX" | wc -c
+# echo -n "$VAULT_TOKEN_HMAC_HEX" | wc -c
 ```
 
 ### Ejecución
@@ -32,6 +43,7 @@ Por defecto escucha en `http://localhost:4001`.
   - resp: `{ "pii": "email@ejemplo.com" }`
 - `POST /anonymize`
   - body: `{ "pii": "email@ejemplo.com", "method": "hash|mask|generalize" }`
+  - también admite `{ "message": "texto libre con PII" }` para redactar emails/teléfonos.
 
 ### Ejemplos con curl
 ```bash
@@ -49,6 +61,11 @@ curl -s -X POST localhost:4001/detokenize \
 curl -s -X POST localhost:4001/anonymize \
   -H 'Content-Type: application/json' \
   -d '{"pii":"email@ejemplo.com","method":"hash"}'
+
+# Redactar PII en texto libre
+curl -s -X POST localhost:4001/anonymize \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"oferta para Dago con email dborda@gmail.com y teléfono 3152319157"}'
 ```
 
 ### Notas de seguridad
