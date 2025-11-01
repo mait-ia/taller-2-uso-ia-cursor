@@ -104,6 +104,41 @@ class VaultController {
 
     return res.status(400).json({ error: 'Método no soportado' });
   };
+
+  /**
+   * Desanonimiza un mensaje que contiene tokens de anonimización (NAME_xxx, EMAIL_xxx, PHONE_xxx)
+   * Reemplaza cada token con su PII original almacenado en el store
+   */
+  deanonymize = async (req, res) => {
+    const body = req.body || {};
+    const anonymizedMessage = body.anonymizedMessage;
+
+    if (typeof anonymizedMessage !== 'string' || anonymizedMessage.length === 0) {
+      return res.status(400).json({ error: 'anonymizedMessage requerido' });
+    }
+
+    // Regex para encontrar tokens de anonimización: NAME_xxx, EMAIL_xxx, PHONE_xxx
+    const tokenRegex = /\b(NAME|EMAIL|PHONE)_([a-f0-9]+)\b/gi;
+    let message = anonymizedMessage;
+    const tokenMatches = [...anonymizedMessage.matchAll(tokenRegex)];
+
+    // Buscar cada token en el store y reemplazarlo con su PII original
+    for (const match of tokenMatches) {
+      const fullToken = match[0]; // ej: "NAME_elbe92e2b3a5"
+      const pii = await this.store.getByAnonymizationToken(fullToken);
+
+      if (pii !== null) {
+        // Reemplazar el token con el PII original
+        message = message.replace(fullToken, pii);
+      } else {
+        // Si no se encuentra el token, mantener el token original
+        // (o podrías devolver un error si prefieres fallar en ese caso)
+        console.warn(`Token no encontrado: ${fullToken}`);
+      }
+    }
+
+    return res.json({ message });
+  };
 }
 
 module.exports = { VaultController };
