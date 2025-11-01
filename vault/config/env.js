@@ -18,6 +18,12 @@ const config = {
   activeKeyVersion: 'v1',
   aesKeys: {},
   tokenHmacKey: null,
+  // Configuración de MongoDB
+  mongodb: {
+    uri: process.env.MONGODB_URI || '',
+    dbName: process.env.MONGODB_DB_NAME || 'mait-privacy-vault',
+    collectionName: process.env.MONGODB_COLLECTION_NAME || 'pairs',
+  },
 };
 
 config.aesKeys[config.activeKeyVersion] = getBufferFromHex(REQUIRED.AES_KEY_HEX, 32);
