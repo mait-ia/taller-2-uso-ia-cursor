@@ -5,6 +5,7 @@ function buildVaultRouter(controller) {
   router.post('/tokenize', controller.tokenize);
   router.post('/detokenize', controller.detokenize);
   router.post('/anonymize', controller.anonymize);
+  router.post('/deanonymize', controller.deanonymize);
   return router;
 }
 
