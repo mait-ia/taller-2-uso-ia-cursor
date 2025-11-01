@@ -7,27 +7,122 @@ const crypto = require('crypto');
 
 const tokenizeSchema = z.object({ pii: z.string().min(1) });
 
-function redactText(text) {
-  // Email simple
-  const emailRegex = /([A-Z0-9._%+-])([A-Z0-9._%+-]*)(@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
-  // Teléfonos: secuencias de 9-11 dígitos (flexible, adaptarlo a tu región)
-  const phoneRegex = /(?<!\d)(\+?\d[\d\s.-]{7,}\d)(?!\d)/g;
+/**
+ * Genera un token único y consistente para un PII dado usando hash
+ * @param {string} pii - El PII original
+ * @param {string} type - Tipo de PII: 'NAME', 'EMAIL', 'PHONE'
+ * @returns {string} Token en formato TYPE_hash (ej: NAME_elbe92e2b3a5)
+ */
+function generateAnonymizationToken(pii, type) {
+  // Generar hash consistente del PII (mismo PII siempre produce mismo hash)
+  const hash = crypto.createHash('sha256').update(pii.toLowerCase().trim()).digest('hex');
+  // Usar primeros 12 caracteres del hash para el token
+  const tokenId = hash.substring(0, 12);
+  return `${type}_${tokenId}`;
+}
 
-  let out = text.replace(emailRegex, (m, first, middle, domain) => {
-    return `${first}***${domain}`;
-  });
+/**
+ * Anonimiza un mensaje detectando y reemplazando PII con tokens almacenables
+ * Detecta nombres, emails y teléfonos, genera tokens y los almacena en el store
+ * @param {string} text - Mensaje original con PII
+ * @param {Object} store - Store para guardar tokens de anonimización
+ * @returns {string} Mensaje anonimizado con tokens
+ */
+async function anonymizeMessage(text, store) {
+  let anonymized = text;
+  const replacements = [];
 
-  out = out.replace(phoneRegex, (m) => {
-    const digits = m.replace(/\D/g, '');
-    if (digits.length < 7) return m;
-    const left = digits.slice(0, 3);
-    const right = digits.slice(-2);
-    const maskedDigits = `${left}***${right}`;
-    // Mantener formato simple: reemplazo compacto
-    return maskedDigits;
-  });
+  // 1. Detectar emails
+  const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+  const emailMatches = [...text.matchAll(emailRegex)];
+  
+  for (const match of emailMatches) {
+    const email = match[0];
+    const token = generateAnonymizationToken(email, 'EMAIL');
+    
+    // Almacenar el token con su PII original
+    await store.saveAnonymizationToken(token, email);
+    
+    replacements.push({
+      original: email,
+      token: token,
+      index: match.index,
+    });
+  }
 
-  return out;
+  // 2. Detectar teléfonos (secuencias de 7-15 dígitos, puede tener espacios, guiones, puntos)
+  const phoneRegex = /\b(?:\+?\d[\d\s.-]{6,}\d)\b/g;
+  const phoneMatches = [...text.matchAll(phoneRegex)];
+  
+  for (const match of phoneMatches) {
+    const phone = match[0];
+    // Normalizar: extraer solo dígitos para verificar longitud válida
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 7 && digits.length <= 15) {
+      const token = generateAnonymizationToken(phone, 'PHONE');
+      
+      // Almacenar el token con su PII original
+      await store.saveAnonymizationToken(token, phone);
+      
+      replacements.push({
+        original: phone,
+        token: token,
+        index: match.index,
+      });
+    }
+  }
+
+  // 3. Detectar nombres completos (secuencias de 2-3 palabras capitalizadas consecutivas)
+  // Buscar patrones como "Nombre Apellido" o "Nombre Apellido1 Apellido2"
+  // Evitar palabras comunes que no son nombres
+  const commonWords = new Set(['para', 'con', 'de', 'la', 'el', 'y', 'o', 'a', 'en', 'por', 'del', 'las', 'los', 'un', 'una', 'desde', 'hasta', 'trabajo', 'oferta']);
+  
+  // Regex para encontrar secuencias de 2-3 palabras que empiezan con mayúscula
+  const nameRegex = /\b([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+){1,2})\b/g;
+  const nameMatches = [...text.matchAll(nameRegex)];
+  
+  for (const match of nameMatches) {
+    const potentialName = match[0];
+    const words = potentialName.split(/\s+/);
+    
+    // Verificar que no sean palabras comunes
+    const isValidName = words.every(word => !commonWords.has(word.toLowerCase()));
+    
+    // Verificar que tenga al menos 2 palabras y no más de 3
+    if (isValidName && words.length >= 2 && words.length <= 3) {
+      // Verificar que no esté dentro de un email o teléfono ya detectado
+      const isAlreadyReplaced = replacements.some(r => {
+        const start = match.index;
+        const end = start + potentialName.length;
+        return start >= r.index && end <= r.index + r.original.length;
+      });
+      
+      if (!isAlreadyReplaced) {
+        const token = generateAnonymizationToken(potentialName, 'NAME');
+        
+        // Almacenar el token con su PII original
+        await store.saveAnonymizationToken(token, potentialName);
+        
+        replacements.push({
+          original: potentialName,
+          token: token,
+          index: match.index,
+        });
+      }
+    }
+  }
+
+  // Ordenar reemplazos de mayor a menor índice para evitar problemas al reemplazar
+  replacements.sort((a, b) => b.index - a.index);
+
+  // Aplicar reemplazos en orden inverso para mantener los índices correctos
+  for (const replacement of replacements) {
+    anonymized = anonymized.substring(0, replacement.index) + 
+                 replacement.token + 
+                 anonymized.substring(replacement.index + replacement.original.length);
+  }
+
+  return anonymized;
 }
 
 class VaultController {
@@ -65,13 +160,23 @@ class VaultController {
     }
   };
 
+  /**
+   * Anonimiza un mensaje o un PII individual
+   * Si recibe 'message', detecta PII dentro del texto y lo reemplaza con tokens almacenables
+   * Si recibe 'pii', aplica métodos de anonimización (hash, mask, generalize)
+   */
   anonymize = async (req, res) => {
     const body = req.body || {};
 
-    // Si viene message, redactamos PII dentro de texto libre
+    // Si viene message, anonimizamos PII dentro de texto libre generando tokens
     if (typeof body.message === 'string' && body.message.length > 0) {
-      const anonymized = redactText(body.message);
-      return res.json({ anonymized });
+      try {
+        const anonymizedMessage = await anonymizeMessage(body.message, this.store);
+        return res.json({ anonymizedMessage });
+      } catch (error) {
+        console.error('Error al anonimizar mensaje:', error);
+        return res.status(500).json({ error: 'Error al anonimizar mensaje' });
+      }
     }
 
     // Compatibilidad previa: anonimización directa de un valor PII
