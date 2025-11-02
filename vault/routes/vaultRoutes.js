@@ -6,6 +6,7 @@ function buildVaultRouter(controller) {
   router.post('/detokenize', controller.detokenize);
   router.post('/anonymize', controller.anonymize);
   router.post('/deanonymize', controller.deanonymize);
+  router.post('/secureChatGPT', controller.secureChatGPT);
   return router;
 }
 

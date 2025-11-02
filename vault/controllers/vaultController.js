@@ -4,8 +4,10 @@ const { encryptAesGcm, decryptAesGcm } = require('../crypto/aesGcm');
 const { buildToken, parseToken } = require('../services/tokenService');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
+const { OpenAIService } = require('../services/openaiService');
 
 const tokenizeSchema = z.object({ pii: z.string().min(1) });
+const secureChatGPTSchema = z.object({ prompt: z.string().min(1) });
 
 /**
  * Genera un token único y consistente para un PII dado usando hash
@@ -123,6 +125,36 @@ async function anonymizeMessage(text, store) {
   }
 
   return anonymized;
+}
+
+/**
+ * Desanonimiza un mensaje que contiene tokens de anonimización
+ * Reemplaza cada token con su PII original almacenado en el store
+ * @param {string} message - Mensaje anonimizado con tokens
+ * @param {Object} store - Store para buscar tokens de anonimización
+ * @returns {string} Mensaje desanonimizado
+ */
+async function deanonymizeMessage(message, store) {
+  // Regex para encontrar tokens de anonimización: NAME_xxx, EMAIL_xxx, PHONE_xxx
+  const tokenRegex = /\b(NAME|EMAIL|PHONE)_([a-f0-9]+)\b/gi;
+  let deanonymized = message;
+  const tokenMatches = [...message.matchAll(tokenRegex)];
+
+  // Buscar cada token en el store y reemplazarlo con su PII original
+  for (const match of tokenMatches) {
+    const fullToken = match[0]; // ej: "NAME_elbe92e2b3a5"
+    const pii = await store.getByAnonymizationToken(fullToken);
+
+    if (pii !== null) {
+      // Reemplazar el token con el PII original
+      deanonymized = deanonymized.replace(fullToken, pii);
+    } else {
+      // Si no se encuentra el token, mantener el token original
+      console.warn(`Token no encontrado: ${fullToken}`);
+    }
+  }
+
+  return deanonymized;
 }
 
 class VaultController {
@@ -243,6 +275,57 @@ class VaultController {
     }
 
     return res.json({ message });
+  };
+
+  /**
+   * Endpoint para chat seguro con ChatGPT
+   * Recibe un prompt con información privada (nombres, teléfonos, emails),
+   * lo anonimiza, lo envía a ChatGPT, recibe la respuesta,
+   * la desanonimiza y la devuelve al cliente
+   */
+  secureChatGPT = async (req, res) => {
+    try {
+      // 1. Validar que el prompt esté presente
+      const parsed = secureChatGPTSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: 'Prompt inválido o faltante' });
+      }
+
+      const { prompt } = parsed.data;
+
+      // 2. Anonimizar el prompt
+      const anonymizedPrompt = await anonymizeMessage(prompt, this.store);
+
+      // 3. Inicializar OpenAIService y enviar prompt anonimizado
+      let openaiService;
+      try {
+        openaiService = new OpenAIService();
+      } catch (error) {
+        console.error('Error al inicializar OpenAIService:', error);
+        return res.status(500).json({ 
+          error: 'Error de configuración: OPENAI_API_KEY no está configurada' 
+        });
+      }
+
+      const aiResponse = await openaiService.getCompletion(anonymizedPrompt);
+
+      // 4. Desanonimizar la respuesta
+      const deanonymizedResponse = await deanonymizeMessage(aiResponse, this.store);
+
+      // 5. Devolver la respuesta desanonimizada al cliente
+      return res.json({ 
+        response: deanonymizedResponse,
+        originalPrompt: prompt,
+        anonymizedPrompt,
+        anonymizedResponse: aiResponse
+      });
+    } catch (error) {
+      console.error('Error en secureChatGPT:', error);
+      return res.status(500).json({ 
+        error: 'Error al procesar la solicitud con ChatGPT',
+        details: error.message 
+      });
+    }
   };
 }
 
