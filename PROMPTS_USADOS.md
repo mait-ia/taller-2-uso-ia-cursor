@@ -168,7 +168,7 @@ Refactorización completa en:
 > - Recibir la respuesta y desanonimizarla
 > - Enviar la respuesta al cliente final
 >
-> 3) Pídale a cursor que le genere un archivo Readme2.md con la descripción del proyecto y los pasos para instalarlo.
+> 3) Pídale a cursor que le genere un archivo README.md con la descripción del proyecto y los pasos para instalarlo.
 
 **Resultado:**
 - Instalación de dependencia `openai`
@@ -177,7 +177,7 @@ Refactorización completa en:
 - Implementación de endpoint `secureChatGPT` en `vault/controllers/vaultController.js`
 - Creación de función `deanonymizeMessage()`
 - Agregado de ruta en `vault/routes/vaultRoutes.js`
-- Creación de `README2.md` con documentación completa
+- Creación de `README.md` con documentación completa
 
 ---
 
@@ -338,7 +338,7 @@ Los **3 prompts más importantes** que definieron el proyecto:
 
 ## 📚 Referencias
 
-- **README2.md** - Documentación técnica del proyecto
+- **README.md** - Documentación técnica del proyecto
 - **Historial de commits** - Registro de cambios en Git
 - **Rama feature/comunicacion_ia** - Implementación completa
 
