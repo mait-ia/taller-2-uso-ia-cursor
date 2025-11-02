@@ -1,6 +1,6 @@
 # Prompts Utilizados para Implementar el Proyecto
 
-Este documento contiene **exactamente** los prompts utilizados durante el desarrollo del proyecto, tal como aparecen en el archivo `chat_with_cursor.md`.
+Este documento contiene **exactamente** los prompts utilizados durante el desarrollo del proyecto, tal como aparecieron en las sesiones de Cursor.
 
 ---
 
@@ -89,30 +89,9 @@ Refactorización completa en:
 
 ---
 
-## 🔧 Sesión de Desarrollo - Integración con ChatGPT
+## 🎯 Prompts de la Sesión Actual (Integración con ChatGPT)
 
-### Prompt Principal: Integración con ChatGPT
-
-**Usuario dice (extracto de la sesión actual):**
-
-> Asume el rol de un desarrollador experto en nodejs, y aplica principios de arquitectura y desarrollo limpio con separación de capas, para hacer la siguiente tarea:
->
-> 1) Solicite a Cursor que le cree una clase para conectarse con OpenAI y hacer un text completion
->
-> 2) Ahora haga un nuevo endpoint que se llame secureChatGPT, este debe:
-> - Recibir un prompt que tenga información privada (nombres, teléfonos e emails)
-> - Anonimizarla usando las funciones ya implementadas
-> - Enviar el prompt a Chatgpt usando la clase creada en el punto 2
-> - Recibir la respuesta y desanonimizarla
-> - Enviar la respuesta al cliente final
->
-> 3) Pídale a cursor que le genere un archivo Readme2.md con la descripción del proyecto y los pasos para instalarlo.
-
----
-
-## 🎯 Prompts de la Sesión Actual
-
-### Prompt 1: Restaurar y Preparar
+### Prompt 7: Restaurar y Preparar
 **Usuario dice:**
 
 > Como revierto todos los cambios del proyecto y restaurar a como esta la rama main de github?
@@ -121,7 +100,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 2: Actualizar
+### Prompt 8: Actualizar
 **Usuario dice:**
 
 > Actualiza el proyecto con el repo main
@@ -130,7 +109,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 3: Crear Rama
+### Prompt 9: Crear Rama
 **Usuario dice:**
 
 > Crea una rama feature/comunicacion_ia basada en main
@@ -139,7 +118,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 4: Push Inicial
+### Prompt 10: Push Inicial
 **Usuario dice:**
 
 > Haz push
@@ -148,7 +127,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 5: Eliminar Rama
+### Prompt 11: Eliminar Rama
 **Usuario dice:**
 
 > Borra la rama creada localmente y remoto
@@ -157,7 +136,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 6: Recrear Rama
+### Prompt 12: Recrear Rama
 **Usuario dice:**
 
 > Crea la rama feature/comunicacion_ia basada en main
@@ -166,7 +145,16 @@ Refactorización completa en:
 
 ---
 
-### Prompt 7: Implementación Principal
+### Prompt 13: Push Rama
+**Usuario dice:**
+
+> Haz push
+
+**Acción:** Push de la rama recién creada
+
+---
+
+### Prompt 14: Implementación Principal
 **Usuario dice:**
 
 > Asume el rol de un desarrollador experto en nodejs, y aplica principios de arquitectura y desarrollo limpio con separación de capas, para hacer la siguiente tarea:
@@ -193,7 +181,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 8: Configurar API Key
+### Prompt 15: Configurar API Key
 **Usuario dice:**
 
 > Configura OPENAI_API_KEY [key]
@@ -202,7 +190,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 9: Probar Endpoints
+### Prompt 16: Probar Endpoints
 **Usuario dice:**
 
 > Ya configure OPENAI_API_KEY ayudame a probar todos los endpoints
@@ -211,7 +199,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 10: Renewar Créditos
+### Prompt 17: Renewar Créditos
 **Usuario dice:**
 
 > Se renovaron creditos
@@ -220,7 +208,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 11: Ejemplos de Curl
+### Prompt 18: Ejemplos Curl
 **Usuario dice:**
 
 > Dame un curl
@@ -229,7 +217,7 @@ Refactorización completa en:
 
 ---
 
-### Prompt 12: Revertir Cambios
+### Prompt 19: Revertir Cambios
 **Usuario dice:**
 
 > Regresa todos los cambios de la ultima interaccion
@@ -238,7 +226,16 @@ Refactorización completa en:
 
 ---
 
-### Prompt 13: Push Final
+### Prompt 20: Re-configurar API Key
+**Usuario dice:**
+
+> Configura OPENAI_API_KEY sk-proj-...
+
+**Acción:** Re-configuración de API key en `.env`
+
+---
+
+### Prompt 21: Push Final
 **Usuario dice:**
 
 > Haz push
@@ -247,12 +244,21 @@ Refactorización completa en:
 
 ---
 
-### Prompt 14: Documentar Prompts
+### Prompt 22: Documentar Prompts
 **Usuario dice:**
 
 > Incluya un archivo en la raíz indicando los prompts que usó para llegar hasta este punto teniendo en cuenta chat_with_cursor.md y elimina ese objeto
 
 **Resultado:** Creación de este archivo `PROMPTS_USADOS.md`
+
+---
+
+### Prompt 23: Corregir Numeración
+**Usuario dice:**
+
+> Actualiza la corrige la numeracion de los prompts
+
+**Resultado:** Corrección de la numeración en `PROMPTS_USADOS.md`
 
 ---
 
@@ -332,9 +338,9 @@ Los **3 prompts más importantes** que definieron el proyecto:
 
 ## 📚 Referencias
 
-- **chat_with_cursor.md** - Conversación completa original
 - **README2.md** - Documentación técnica del proyecto
 - **Historial de commits** - Registro de cambios en Git
+- **Rama feature/comunicacion_ia** - Implementación completa
 
 ---
 
